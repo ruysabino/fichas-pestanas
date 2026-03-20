@@ -415,8 +415,15 @@
           <input type="hidden" id="f-img-auth" />
         </div>
         <div class="field-group field-group--full">
-          <label>Assinatura Digital — escreva o seu nome completo <span class="req">*</span></label>
-          <input id="f-assinatura" type="text" placeholder="Nome completo (equivale a assinatura)" />
+          <label>Assinatura Digital <span class="req">*</span></label>
+          <div class="sign-wrap">
+            <canvas id="sign-canvas" class="sign-canvas" width="680" height="160"></canvas>
+            <div class="sign-toolbar">
+              <span class="sign-hint">Assine com o dedo, rato ou stylus</span>
+              <button type="button" class="btn-sign-clear" onclick="clearSignature()">✕ Limpar</button>
+            </div>
+          </div>
+          <input type="hidden" id="f-assinatura" />
         </div>
       </div>
     </section>

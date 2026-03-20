@@ -619,6 +619,53 @@ input[type="file"] {
   margin: 4px 0;
 }
 
+/* ── ASSINATURA CANVAS ───────────────────────────────────────────────────── */
+.sign-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sign-canvas {
+  width: 100%;
+  height: 160px;
+  background: var(--bg3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: crosshair;
+  touch-action: none;
+  display: block;
+}
+.sign-canvas.has-signature {
+  border-color: var(--gold);
+}
+.sign-canvas.sign-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(224,90,90,.25);
+}
+.sign-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sign-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.btn-sign-clear {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  transition: border-color .2s, color .2s;
+}
+.btn-sign-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 /* ── PRINT STYLES ────────────────────────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }

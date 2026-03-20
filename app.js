@@ -142,6 +142,7 @@ async function loadStats() {
 function showNovaFicha() {
   resetFicha();
   showScreen('screen-ficha');
+  setTimeout(initSignature, 60);
 }
 
 function backToSelect() {
@@ -156,6 +157,106 @@ function showListagem() {
 
 function backToList() {
   showListagem();
+}
+
+/* ── ASSINATURA CANVAS ───────────────────────────────────────────────────── */
+let _signDrawing = false;
+let _signHasData = false;
+
+function initSignature() {
+  const canvas = document.getElementById('sign-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr  = window.devicePixelRatio || 1;
+    // Save existing drawing
+    const snapshot = _signHasData ? canvas.toDataURL() : null;
+    canvas.width  = Math.floor(rect.width  * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.scale(dpr, dpr);
+    setupCtx();
+    // Restore drawing
+    if (snapshot) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      img.src = snapshot;
+    }
+  }
+
+  function setupCtx() {
+    ctx.strokeStyle = '#e2c99a';
+    ctx.lineWidth   = 2.2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+  }
+
+  resizeCanvas();
+  new ResizeObserver(resizeCanvas).observe(canvas);
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+
+  function startDraw(e) {
+    e.preventDefault();
+    _signDrawing = true;
+    const { x, y } = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+
+  function draw(e) {
+    if (!_signDrawing) return;
+    e.preventDefault();
+    const { x, y } = getPos(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    _signHasData = true;
+    canvas.classList.add('has-signature');
+    canvas.classList.remove('sign-error');
+    document.getElementById('f-assinatura').value = canvas.toDataURL('image/png');
+  }
+
+  function endDraw(e) {
+    if (!_signDrawing) return;
+    e.preventDefault();
+    _signDrawing = false;
+    ctx.beginPath();
+  }
+
+  canvas.addEventListener('mousedown',  startDraw);
+  canvas.addEventListener('mousemove',  draw);
+  canvas.addEventListener('mouseup',    endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove',  draw,      { passive: false });
+  canvas.addEventListener('touchend',   endDraw,   { passive: false });
+}
+
+function clearSignature() {
+  const canvas = document.getElementById('sign-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  _signHasData = false;
+  canvas.classList.remove('has-signature', 'sign-error');
+  document.getElementById('f-assinatura').value = '';
+}
+
+function isSignatureEmpty() {
+  if (!_signHasData) return true;
+  const canvas = document.getElementById('sign-canvas');
+  if (!canvas) return true;
+  const ctx  = canvas.getContext('2d');
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] > 10) return false;
+  }
+  return true;
 }
 
 /* ── RADIO BUTTONS ───────────────────────────────────────────────────────── */
@@ -199,6 +300,8 @@ function resetFicha() {
   document.querySelectorAll('input[type="hidden"]').forEach(i => i.value = '');
   // Set today's date for atendimento
   document.getElementById('f-data-atend').value = new Date().toISOString().split('T')[0];
+  clearSignature();
+  _signHasData = false;
   // Hide conditional rows
   ['row-alergia-desc','row-alergia-cil-desc','row-doenca-ocular-desc',
    'row-cirurgia-ocular-tempo','row-lentes-compromisso','row-duracao'].forEach(id => {
@@ -229,6 +332,15 @@ async function guardarFicha() {
     { id: 'f-assinatura',    label: 'Assinatura digital' },
   ];
   for (const r of req) {
+    if (r.id === 'f-assinatura') {
+      if (isSignatureEmpty()) {
+        showToast('⚠️ Campo obrigatório: Assinatura Digital');
+        document.getElementById('sign-canvas')?.classList.add('sign-error');
+        document.getElementById('sign-canvas')?.closest('.ficha-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      continue;
+    }
     const el = document.getElementById(r.id);
     if (!el || !el.value.trim()) {
       showToast('⚠️ Campo obrigatório: ' + r.label);
@@ -435,21 +547,25 @@ function buildPrintHTML(f) {
       <div class="print-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;">
         ${row('Consentimento', f.consent)}
         ${row('Autorização de imagem', f.imgAuth)}
-        ${row('Assinatura digital', f.assinatura, true)}
+      </div>
+      <div style="margin-top:12px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#777;margin-bottom:6px;">Assinatura Digital</div>
+        ${f.assinatura
+          ? `<div style="background:#fafafa;border:1px solid #ddd;border-radius:6px;padding:6px;display:inline-block;">
+               <img src="${f.assinatura}" style="height:80px;max-width:100%;display:block;" alt="Assinatura" />
+             </div>`
+          : '<div style="height:80px;border:1px dashed #ccc;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px;">Sem assinatura</div>'
+        }
       </div>
     </section>
 
     <div class="print-sign" style="margin-top:28px;display:flex;justify-content:space-between;gap:30px;padding-top:16px;border-top:1px solid #ddd;">
-      <div class="print-sign-field" style="flex:1;padding-top:6px;font-size:11px;color:#555;text-align:center;">
-        <div style="border-top:1px solid #1a1a1a;padding-top:6px;margin-bottom:4px;"></div>
-        Assinatura da Cliente
-      </div>
-      <div class="print-sign-field" style="flex:1;padding-top:6px;font-size:11px;color:#555;text-align:center;">
-        <div style="border-top:1px solid #1a1a1a;padding-top:6px;margin-bottom:4px;"></div>
+      <div style="flex:1;font-size:11px;color:#555;text-align:center;">
+        <div style="border-top:1px solid #1a1a1a;padding-top:6px;margin-bottom:4px;margin-top:8px;"></div>
         Lash Designer · ${esc(f.profissional) || '___________________'}
       </div>
-      <div class="print-sign-field" style="flex:1;padding-top:6px;font-size:11px;color:#555;text-align:center;">
-        <div style="border-top:1px solid #1a1a1a;padding-top:6px;margin-bottom:4px;"></div>
+      <div style="flex:1;font-size:11px;color:#555;text-align:center;">
+        <div style="border-top:1px solid #1a1a1a;padding-top:6px;margin-bottom:4px;margin-top:8px;"></div>
         Data: ${fmt(f.dataAtend) || '___________________'}
       </div>
     </div>
