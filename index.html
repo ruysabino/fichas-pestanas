@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fichas · Extensão de Pestanas</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     TOAST
+════════════════════════════════════════════ -->
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<!-- ═══════════════════════════════════════════
+     ECRÃ: SETUP (1.ª vez)
+════════════════════════════════════════════ -->
+<div id="screen-setup" class="screen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">✦</div>
+      <span class="auth-brand">Lash Studio</span>
+    </div>
+    <h1 class="auth-title">Configuração Inicial</h1>
+    <p class="auth-sub">Crie a conta de administrador para começar.</p>
+    <div class="field-group">
+      <label>Nome do estúdio</label>
+      <input id="setup-nome" type="text" placeholder="ex: Lash by Ana" autocomplete="off" />
+    </div>
+    <div class="field-group">
+      <label>Utilizador</label>
+      <input id="setup-user" type="text" placeholder="nome de utilizador" autocomplete="username" />
+    </div>
+    <div class="field-group">
+      <label>Senha</label>
+      <input id="setup-pass" type="password" placeholder="mínimo 8 caracteres" autocomplete="new-password" />
+    </div>
+    <div class="field-group">
+      <label>Confirmar Senha</label>
+      <input id="setup-conf" type="password" placeholder="repetir senha" autocomplete="new-password" />
+    </div>
+    <p id="setup-err" class="err-msg"></p>
+    <button class="btn-primary" onclick="doSetup()">Criar conta e começar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ECRÃ: LOGIN
+════════════════════════════════════════════ -->
+<div id="screen-login" class="screen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">✦</div>
+      <span class="auth-brand" id="login-brand">Lash Studio</span>
+    </div>
+    <h1 class="auth-title">Entrar</h1>
+    <div class="field-group">
+      <label>Utilizador</label>
+      <input id="login-user" type="text" placeholder="utilizador" autocomplete="username" />
+    </div>
+    <div class="field-group">
+      <label>Senha</label>
+      <input id="login-pass" type="password" placeholder="senha" autocomplete="current-password" />
+    </div>
+    <p id="login-err" class="err-msg"></p>
+    <button id="login-btn" class="btn-primary" onclick="doLogin()">🔐 Entrar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ECRÃ: SELEÇÃO / DASHBOARD
+════════════════════════════════════════════ -->
+<div id="screen-select" class="screen" style="display:none">
+  <header class="top-bar">
+    <div class="top-bar-brand">
+      <div class="logo-mark-sm">✦</div>
+      <span id="studio-name-header">Lash Studio</span>
+    </div>
+    <div class="top-bar-actions">
+      <span id="user-badge" class="user-badge"></span>
+      <div id="admin-only-btns" class="admin-btns" style="display:none">
+        <button class="btn-icon" onclick="showDefinicoes()" title="Definições">⚙️</button>
+      </div>
+      <button class="btn-icon" onclick="doLogout()" title="Sair">🚪</button>
+    </div>
+  </header>
+
+  <main class="select-main">
+    <div class="select-hero">
+      <h1 class="select-title">Fichas de Anamnese</h1>
+      <p class="select-sub">Extensão de Pestanas</p>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card" id="stat-total">
+        <span class="stat-num" id="stat-total-num">–</span>
+        <span class="stat-label">Fichas totais</span>
+      </div>
+      <div class="stat-card" id="stat-month">
+        <span class="stat-num" id="stat-month-num">–</span>
+        <span class="stat-label">Este mês</span>
+      </div>
+      <div class="stat-card" id="stat-auth-yes">
+        <span class="stat-num" id="stat-auth-yes-num">–</span>
+        <span class="stat-label">Aut. imagem ✓</span>
+      </div>
+    </div>
+
+    <!-- Action cards -->
+    <div class="action-grid">
+      <button class="proc-card" onclick="showNovaFicha()">
+        <div class="proc-icon">👁️</div>
+        <div class="proc-info">
+          <strong>Nova Ficha</strong>
+          <span>Extensão de Pestanas</span>
+        </div>
+        <div class="proc-arrow">→</div>
+      </button>
+
+      <button class="proc-card proc-card--secondary" onclick="showListagem()">
+        <div class="proc-icon">📋</div>
+        <div class="proc-info">
+          <strong>Ver Fichas</strong>
+          <span>Consultar e imprimir</span>
+        </div>
+        <div class="proc-arrow">→</div>
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ECRÃ: NOVA FICHA
+════════════════════════════════════════════ -->
+<div id="screen-ficha" class="screen" style="display:none">
+  <header class="top-bar">
+    <button class="btn-back" onclick="backToSelect()">← Voltar</button>
+    <span class="top-bar-title">Nova Ficha · Extensão de Pestanas</span>
+    <div></div>
+  </header>
+
+  <div class="ficha-container">
+
+    <!-- SECÇÃO 1: DADOS PESSOAIS -->
+    <section class="ficha-section">
+      <h2 class="section-title">
+        <span class="section-num">01</span>
+        Dados Pessoais
+      </h2>
+      <div class="form-grid">
+        <div class="field-group field-group--full">
+          <label>Nome Completo <span class="req">*</span></label>
+          <input id="f-nome" type="text" placeholder="Nome completo da cliente" />
+        </div>
+        <div class="field-group">
+          <label>Data de Nascimento <span class="req">*</span></label>
+          <input id="f-nasc" type="date" />
+        </div>
+        <div class="field-group">
+          <label>Telefone / WhatsApp <span class="req">*</span></label>
+          <input id="f-tel" type="tel" placeholder="+351 9xx xxx xxx" />
+        </div>
+        <div class="field-group">
+          <label>Instagram (opcional)</label>
+          <input id="f-instagram" type="text" placeholder="@utilizador" />
+        </div>
+        <div class="field-group">
+          <label>Data do Atendimento</label>
+          <input id="f-data-atend" type="date" />
+        </div>
+        <div class="field-group">
+          <label>Profissional</label>
+          <input id="f-profissional" type="text" placeholder="Nome da lash designer" />
+        </div>
+      </div>
+    </section>
+
+    <!-- SECÇÃO 2: ALERGIAS -->
+    <section class="ficha-section">
+      <h2 class="section-title">
+        <span class="section-num">02</span>
+        Alergias
+      </h2>
+      <div class="form-grid">
+        <div class="field-group field-group--full">
+          <label>Sofre de alguma alergia conhecida (látex, acrilatos, cosméticos)? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-alergia" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-alergia" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-alergia" />
+        </div>
+        <div class="field-group field-group--full" id="row-alergia-desc">
+          <label>Se sim, descreva a substância e a reação:</label>
+          <textarea id="f-alergia-desc" rows="2" placeholder="Ex: látex → urticária…"></textarea>
+        </div>
+        <div class="field-group field-group--full">
+          <label>Tem alergia conhecida a colas, micropore, fita transparente ou patches para os olhos? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-alergia-cola" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-alergia-cola" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-alergia-cola" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Já teve alguma reação alérgica prévia a extensões de cílios? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-alergia-cil" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-alergia-cil" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-alergia-cil" />
+        </div>
+        <div class="field-group field-group--full" id="row-alergia-cil-desc">
+          <label>Se sim, descreva os sintomas (inchaço, coceira, vermelhidão, etc.):</label>
+          <textarea id="f-alergia-cil-desc" rows="2" placeholder="Descreva os sintomas…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECÇÃO 3: SAÚDE OCULAR -->
+    <section class="ficha-section">
+      <h2 class="section-title">
+        <span class="section-num">03</span>
+        Saúde Ocular
+      </h2>
+      <div class="form-grid">
+        <div class="field-group field-group--full">
+          <label>Possui alguma doença ocular crónica (blefarite, conjuntivite crónica, glaucoma, síndrome do olho seco, etc.)? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-doenca-ocular" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-doenca-ocular" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-doenca-ocular" />
+        </div>
+        <div class="field-group field-group--full" id="row-doenca-ocular-desc">
+          <label>Se sim, qual?</label>
+          <input id="f-doenca-ocular-desc" type="text" placeholder="Nome da condição…" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Está a fazer uso de algum colírio medicamentoso atualmente? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-colirio" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-colirio" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-colirio" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Já realizou cirurgia ocular (ex: LASIK, catarata)? Se sim, há quanto tempo? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-cirurgia-ocular" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-cirurgia-ocular" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-cirurgia-ocular" />
+        </div>
+        <div class="field-group field-group--full" id="row-cirurgia-ocular-tempo">
+          <label>Há quanto tempo foi a cirurgia?</label>
+          <input id="f-cirurgia-ocular-tempo" type="text" placeholder="ex: 2 anos" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Tem sensibilidade à luz (fotofobia)? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-fotofobia" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-fotofobia" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-fotofobia" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Usa óculos de grau ou lentes de contato? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-oculos" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-oculos" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-oculos" />
+        </div>
+        <div class="field-group field-group--full" id="row-lentes-compromisso">
+          <label>Se usa lentes: compromete-se a retirá-las antes do procedimento?</label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-lentes-comprom" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-lentes-comprom" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-lentes-comprom" />
+        </div>
+      </div>
+    </section>
+
+    <!-- SECÇÃO 4: SAÚDE GERAL -->
+    <section class="ficha-section">
+      <h2 class="section-title">
+        <span class="section-num">04</span>
+        Saúde Geral
+      </h2>
+      <div class="form-grid">
+        <div class="field-group field-group--full">
+          <label>Está em tratamento dermatológico no rosto atualmente (ácidos, Roacutan, etc.)? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-derm" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-derm" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-derm" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Está grávida ou a amamentar? <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-gravida" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-gravida" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-gravida" />
+        </div>
+      </div>
+    </section>
+
+    <!-- SECÇÃO 5: HÁBITOS -->
+    <section class="ficha-section">
+      <h2 class="section-title">
+        <span class="section-num">05</span>
+        Hábitos
+      </h2>
+      <div class="form-grid">
+        <div class="field-group field-group--full">
+          <label>Costuma usar maquiagem pesada nos olhos com frequência?</label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-maquiagem" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-maquiagem" data-val="Não" onclick="selectRadio(this)">Não</button>
+            <button class="radio-btn" data-field="f-maquiagem" data-val="Talvez" onclick="selectRadio(this)">Talvez</button>
+          </div>
+          <input type="hidden" id="f-maquiagem" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Costuma esfregar os olhos com frequência?</label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-esfregar" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-esfregar" data-val="Não" onclick="selectRadio(this)">Não</button>
+            <button class="radio-btn" data-field="f-esfregar" data-val="Talvez" onclick="selectRadio(this)">Talvez</button>
+          </div>
+          <input type="hidden" id="f-esfregar" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Pratica natação ou atividades aquáticas com frequência?</label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-natacao" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-natacao" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-natacao" />
+        </div>
+      </div>
+    </section>
+
+    <!-- SECÇÃO 6: HISTÓRICO DE EXTENSÕES -->
+    <section class="ficha-section">
+      <h2 class="section-title">
+        <span class="section-num">06</span>
+        Histórico de Extensões
+      </h2>
+      <div class="form-grid">
+        <div class="field-group field-group--full">
+          <label>Já fez extensão de cílios antes?</label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-historico" data-val="Sim" onclick="selectRadio(this)">Sim</button>
+            <button class="radio-btn" data-field="f-historico" data-val="Não" onclick="selectRadio(this)">Não</button>
+          </div>
+          <input type="hidden" id="f-historico" />
+        </div>
+        <div class="field-group field-group--full" id="row-duracao">
+          <label>Se sim, quanto tempo costumavam durar?</label>
+          <input id="f-duracao" type="text" placeholder="ex: 3 semanas" />
+        </div>
+        <div class="field-group">
+          <label>Pestana desejada</label>
+          <select id="f-pestana">
+            <option value="">— Selecione —</option>
+            <option>Natural</option>
+            <option>Volumoso</option>
+            <option>Boneca</option>
+            <option>Gatinho</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECÇÃO 7: CONSENTIMENTO -->
+    <section class="ficha-section ficha-section--consent">
+      <h2 class="section-title">
+        <span class="section-num">07</span>
+        Declaração de Consentimento
+      </h2>
+      <div class="consent-box">
+        <p>Ao assinar esta ficha, a cliente declara que:</p>
+        <ul>
+          <li>✦ Todas as informações acima são verdadeiras.</li>
+          <li>✦ Compreende os cuidados pós-procedimento necessários para a manutenção dos cílios.</li>
+          <li>✦ Está ciente dos riscos, ainda que raros, de irritação ocular menor.</li>
+          <li>✦ Concorda com a realização do procedimento.</li>
+        </ul>
+        <p class="rgpd-note">Os dados recolhidos destinam-se exclusivamente à prestação segura do serviço, com base no consentimento explícito da titular (Art. 6.º, al. a) do RGPD), sendo tratados como dados de saúde nos termos do Art. 9.º do RGPD.</p>
+      </div>
+      <div class="form-grid">
+        <div class="field-group field-group--full">
+          <label>Consentimento <span class="req">*</span></label>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-consent" data-val="Sim" onclick="selectRadio(this)">✅ Concordo</button>
+            <button class="radio-btn" data-field="f-consent" data-val="Não" onclick="selectRadio(this)">❌ Não concordo</button>
+          </div>
+          <input type="hidden" id="f-consent" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Autorização de Imagem <span class="req">*</span></label>
+          <p class="field-hint">Concede permissão para a lash designer fotografar/gravar os seus cílios para portfolio e divulgação em redes sociais (identidade preservada).</p>
+          <div class="radio-group">
+            <button class="radio-btn" data-field="f-img-auth" data-val="Autorizo" onclick="selectRadio(this)">✅ Sim, autorizo</button>
+            <button class="radio-btn" data-field="f-img-auth" data-val="Não autorizo" onclick="selectRadio(this)">❌ Não autorizo</button>
+          </div>
+          <input type="hidden" id="f-img-auth" />
+        </div>
+        <div class="field-group field-group--full">
+          <label>Assinatura Digital — escreva o seu nome completo <span class="req">*</span></label>
+          <input id="f-assinatura" type="text" placeholder="Nome completo (equivale a assinatura)" />
+        </div>
+      </div>
+    </section>
+
+    <!-- AÇÕES -->
+    <div class="ficha-actions">
+      <button class="btn-secondary" onclick="backToSelect()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarFicha()">💾 Guardar Ficha</button>
+    </div>
+
+  </div><!-- /ficha-container -->
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ECRÃ: LISTAGEM
+════════════════════════════════════════════ -->
+<div id="screen-list" class="screen" style="display:none">
+  <header class="top-bar">
+    <button class="btn-back" onclick="backToSelect()">← Voltar</button>
+    <span class="top-bar-title">Fichas Guardadas</span>
+    <div></div>
+  </header>
+
+  <div class="list-container">
+    <div class="list-toolbar">
+      <input id="search-input" type="search" placeholder="🔍 Pesquisar por nome…" oninput="filterList()" />
+    </div>
+    <div id="fichas-list" class="fichas-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ECRÃ: VER FICHA (para imprimir)
+════════════════════════════════════════════ -->
+<div id="screen-view" class="screen" style="display:none">
+  <header class="top-bar no-print">
+    <button class="btn-back" onclick="backToList()">← Lista</button>
+    <span class="top-bar-title">Ficha de Anamnese</span>
+    <button class="btn-primary btn-sm" onclick="window.print()">🖨️ Imprimir / PDF</button>
+  </header>
+  <div id="print-area"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ECRÃ: DEFINIÇÕES
+════════════════════════════════════════════ -->
+<div id="screen-definicoes" class="screen" style="display:none">
+  <header class="top-bar">
+    <button class="btn-back" onclick="backFromDefinicoes()">← Voltar</button>
+    <span class="top-bar-title">Definições</span>
+    <div></div>
+  </header>
+
+  <div class="def-container">
+
+    <!-- UTILIZADORES -->
+    <section class="def-section">
+      <h2 class="def-section-title">👥 Utilizadores</h2>
+      <div id="users-list" class="users-list"></div>
+      <div class="def-card">
+        <h3>Adicionar utilizador</h3>
+        <div class="form-grid">
+          <div class="field-group"><label>Nome</label><input id="new-user-name" type="text" /></div>
+          <div class="field-group"><label>Senha</label><input id="new-user-pass" type="password" /></div>
+          <div class="field-group">
+            <label>Perfil</label>
+            <select id="new-user-role"><option value="user">Utilizador</option><option value="admin">Admin</option></select>
+          </div>
+        </div>
+        <p id="add-user-err" class="err-msg"></p>
+        <button class="btn-primary" onclick="addUser()">➕ Adicionar</button>
+      </div>
+    </section>
+
+    <!-- ALTERAR SENHA -->
+    <section class="def-section">
+      <h2 class="def-section-title">🔑 Alterar a minha senha</h2>
+      <div class="def-card">
+        <div class="form-grid">
+          <div class="field-group"><label>Senha atual</label><input id="chg-old-pass" type="password" /></div>
+          <div class="field-group"><label>Nova senha</label><input id="chg-new-pass" type="password" /></div>
+          <div class="field-group"><label>Confirmar</label><input id="chg-conf-pass" type="password" /></div>
+        </div>
+        <p id="chg-pass-err" class="err-msg"></p>
+        <button class="btn-primary" onclick="doChangeOwnPassword()">Alterar senha</button>
+      </div>
+    </section>
+
+    <!-- BACKUP -->
+    <section class="def-section">
+      <h2 class="def-section-title">💾 Backup & Restauro</h2>
+      <div class="def-card">
+        <h3>Exportar backup cifrado</h3>
+        <div class="form-grid">
+          <div class="field-group"><label>Senha do backup</label><input id="backup-pass" type="password" /></div>
+          <div class="field-group"><label>Confirmar</label><input id="backup-conf" type="password" /></div>
+        </div>
+        <p id="backup-err" class="err-msg"></p>
+        <button class="btn-primary" onclick="exportBackup()">📤 Exportar backup</button>
+      </div>
+      <div class="def-card" style="margin-top:16px">
+        <h3>Restaurar backup</h3>
+        <div class="form-grid">
+          <div class="field-group"><label>Ficheiro .brb</label><input id="restore-file" type="file" accept=".brb,.json" /></div>
+          <div class="field-group"><label>Senha</label><input id="restore-pass" type="password" /></div>
+        </div>
+        <div class="radio-group" style="margin-bottom:12px">
+          <label style="font-size:13px;margin-right:8px">Modo:</label>
+          <label class="radio-label"><input type="radio" name="restore-mode" value="merge" checked /> Mesclar</label>
+          <label class="radio-label"><input type="radio" name="restore-mode" value="replace" /> Substituir tudo</label>
+        </div>
+        <p id="restore-err" class="err-msg"></p>
+        <button class="btn-primary" onclick="importBackup()">📥 Restaurar</button>
+      </div>
+    </section>
+
+    <!-- RGPD -->
+    <section class="def-section">
+      <h2 class="def-section-title">📜 Relatório RGPD</h2>
+      <div class="def-card">
+        <p style="font-size:14px;color:var(--text-secondary)">Gera um relatório auditável com todos os dados pessoais armazenados, nos termos do Art. 30.º do RGPD.</p>
+        <button class="btn-secondary" onclick="exportRGPD()">📄 Exportar relatório RGPD</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="security.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
